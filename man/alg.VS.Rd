@@ -4,8 +4,7 @@
 \alias{alg.VS}
 \title{VS quantile-based clustering algorithm}
 \usage{
-alg.VS(data, k = 2, eps = 1e-08, it.max = 100, B = 30, lambda = rep(1,
-  p))
+alg.VS(data, k = 2, eps = 1e-08, it.max = 100, B = 30, lambda = rep(1, p))
 }
 \arguments{
 \item{data}{A numeric vector, matrix, or data frame of observations. Categorical variables are not allowed. If a matrix or data frame, rows correspond to observations and columns correspond to variables.}
@@ -22,6 +21,8 @@ alg.VS(data, k = 2, eps = 1e-08, it.max = 100, B = 30, lambda = rep(1,
 }
 \value{
 A list containing the following elements:
+\item{method}{The chosen parameterization, VS, Variable-wise theta_j and Scaled variables}
+\item{k}{The number of clusters.}
 \item{cl}{A vector whose [i]th entry is classification of observation i in the test data.}
 \item{qq}{A matrix whose [h,j]th entry is the theta-quantile of variable j in cluster h.}
 \item{theta}{A vector whose [j]th entry is the percentile theta for variable j.}
@@ -44,5 +45,5 @@ out$lambda
 table(out$cl)
 }
 \references{
-C. Hennig, C. Viroli, L. Anderlucci (2018). \emph{Quantile-based clustering}. \url{http://arxiv.org/abs/1806.10403}
+Hennig, C., Viroli, C., Anderlucci, L. (2019) "Quantile-based clustering" \emph{Electronic Journal of Statistics}, 13 (2) 4849-4883  <doi:10.1214/19-EJS1640>
 }

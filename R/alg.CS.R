@@ -16,7 +16,7 @@
 #' \item{Vseq}{The values of the objective function V at each step of the algorithm.}
 #' \item{V}{The final value of the objective function V.}
 #' \item{lambda}{A vector containing the scaling factor for each variable.}
-#' @references C. Hennig, C. Viroli, L. Anderlucci (2018). \emph{Quantile-based clustering}. \url{http://arxiv.org/abs/1806.10403}
+#' @references Hennig, C., Viroli, C., Anderlucci, L. (2019) "Quantile-based clustering" \emph{Electronic Journal of Statistics}, 13 (2) 4849-4883  <doi:10.1214/19-EJS1640>
 #' @examples out <- alg.CS(iris[,-5],k=3)
 #' out$theta
 #' out$qq
@@ -27,6 +27,7 @@
 
 alg.CS=function(data,k=2,eps=1e-8,it.max=100,B=30,lambda=rep(1,p))
 {
+  data=as.matrix(data)
   numobs=nrow(data)
   p=ncol(data)
 
@@ -44,7 +45,8 @@ alg.CS=function(data,k=2,eps=1e-8,it.max=100,B=30,lambda=rep(1,p))
   VV[1]=Inf
 
   for (hh in 1:B) {theta=stats::runif(1)
-  for (i in 1:k) {qq[i,]=apply(data,2,stats::quantile,prob=(i-1)/(k-1)*0.5+theta/2)
+  for (i in 1:k) { if (k==1) qq[i,]=apply(data,2,stats::quantile,theta/2)
+  else qq[i,]=apply(data,2,stats::quantile,prob=(i-1)/(k-1)*0.5+theta/2)
   QQ[,i]=rowSums((theta+((1-2*theta)*(data<t(matrix(qq[i,],p,numobs)))))*abs(data-t(matrix(qq[i,],p,numobs))))-p*log(theta*(1-theta))}
   cl=apply(QQ,1,which.min)
   VV.temp=sum(QQ[cbind(seq_along(cl),cl)])
@@ -92,9 +94,10 @@ alg.CS=function(data,k=2,eps=1e-8,it.max=100,B=30,lambda=rep(1,p))
     if (h<5) ratio=2*eps
   }
 
-  names(lambda)<-colnames(qq)<-colnames(data)
+  theta<-rep(theta,p)
+  names(theta)<-names(lambda)<-colnames(qq)<-colnames(data)
 
-  return(list(Vseq=VV,V=VV[h],cl=cl,qq=qq,theta=theta,lambda=lambda))
+  return(list(method="CS",k=k,Vseq=VV,V=VV[h],cl=cl,qq=qq,theta=theta,lambda=lambda))
 }
 
 

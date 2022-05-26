@@ -10,12 +10,15 @@
 #' @details Algorithm CU: Common theta and Unscaled variables. A common value of theta for all the variables is assumed.
 #' This strategy directly generalizes the conventional k-means to other moments of the distribution to better accommodate skewness in the data.
 #' @return A list containing the following elements:
+#' \item{method}{The chosen parameterization, CU, Common theta and Unscaled variables}
+#' \item{k}{The number of clusters.}
 #' \item{cl}{A vector whose [i]th entry is classification of observation i in the test data.}
 #' \item{qq}{A matrix whose [h,j]th entry is the theta-quantile of variable j in cluster h.}
-#' \item{theta}{The estimated common theta.}
+#' \item{theta}{A vector whose [j]th entry is the percentile theta for variable j.}
 #' \item{Vseq}{The values of the objective function V at each step of the algorithm.}
 #' \item{V}{The final value of the objective function V.}
-#' @references C. Hennig, C. Viroli, L. Anderlucci (2018). \emph{Quantile-based clustering}. \url{http://arxiv.org/abs/1806.10403}
+#' \item{lambda}{A vector containing the scaling factor for each variable.}
+#' @references Hennig, C., Viroli, C., Anderlucci, L. (2019) "Quantile-based clustering" \emph{Electronic Journal of Statistics}, 13 (2) 4849-4883  <doi:10.1214/19-EJS1640>
 #' @examples out <- alg.CU(iris[,-5],k=3)
 #' out$theta
 #' out$qq
@@ -25,11 +28,13 @@
 
 alg.CU=function(data,k=2,eps=1e-8,it.max=100,B=30)
 {
+  data<-as.matrix(data)
   numobs=nrow(data)
   p=ncol(data)
 
   qq=matrix(0,k,p)
   QQ=matrix(0,numobs,k)
+  QQ0=array(0,c(numobs,p,k))
   VV.temp=NULL
   VV=0
 
@@ -41,7 +46,9 @@ alg.CU=function(data,k=2,eps=1e-8,it.max=100,B=30)
   VV[1]=Inf
 
   for (hh in 1:B) {theta=stats::runif(1)
-  for (i in 1:k) {qq[i,]=apply(data,2,stats::quantile,prob=(i-1)/(k-1)*0.5+theta/2)
+  for (i in 1:k) {
+    if (k==1) qq[i,]=apply(data,2,stats::quantile,prob=theta/2)
+    else qq[i,]=apply(data,2,stats::quantile,prob=(i-1)/(k-1)*0.5+theta/2)
   QQ[,i]=rowSums((theta+((1-2*theta)*(data<t(matrix(qq[i,],p,numobs)))))*abs(data-t(matrix(qq[i,],p,numobs))))-p*log(theta*(1-theta))}
   cl=apply(QQ,1,which.min)
   VV.temp=sum(QQ[cbind(seq_along(cl),cl)])
@@ -77,8 +84,17 @@ alg.CU=function(data,k=2,eps=1e-8,it.max=100,B=30)
   if (h<5) ratio=2*eps
   }
 
-  colnames(qq) <- colnames(data)
-  return(list(Vseq=VV,V=VV[h],cl=cl,qq=qq,theta=theta))
+  ### d) estimate lambda
+  for (i in 1:k)  QQ0[,,i]=as.matrix((theta+((1-2*theta)*(data<t(matrix(qq[i,],p,numobs)))))*abs(data-t(matrix(qq[i,],p,numobs))))
+
+  select<-function(QQ0,cl) return(QQ0[cbind(seq_along(cl),cl)])
+  den=colMeans(apply(QQ0,2,select,cl))
+  den=ifelse(den==0,eps,den)
+  lambda=1/den
+
+  theta<-rep(theta,p)
+  names(theta)<-names(lambda)<-colnames(qq) <- colnames(data)
+  return(list(method="CU",k=k,Vseq=VV,V=VV[h],cl=cl,qq=qq,theta=theta,lambda=lambda))
 }
 
 
